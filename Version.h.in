@@ -1,0 +1,2 @@
+#define llrt_VERSION_MAJOR @llrt_VERSION_MAJOR@
+#define llrt_VERSION_MINOR @llrt_VERSION_MINOR@
