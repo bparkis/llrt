@@ -284,32 +284,6 @@ namespace llrt{
         }
     };
 
-    // template<typename TTypes>
-    // struct TensorWrapper : VariantVectorWrapper{
-    //     Tensor<TTypes> &t;
-    //     TensorWrapper(Tensor<TTypes> &t) : t(t) {}
-
-    //     template <typename VecT>
-    //     struct VecTGetter;
-
-    //     template <typename T>
-    //     struct VecTGetter<std::vector<T> >{
-    //         using ItemType = T;
-    //     };
-
-    //     virtual void apply(void (*f)(AnyVector &)){
-    //         if (t.noData)
-    //             return;
-    //         std::visit([&f](auto &&vec){
-    //             using VecT = std::decay_t<decltype(arg)>;
-    //             using T = VecTGetter<VecT>::ItemType;
-    //             TVectorWrapper<T> wrap(arg);
-    //             f(wrap);
-    //         }, t.values);
-
-    //     }
-    // };
-
     template<typename TL>
     struct Network;
 
