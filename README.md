@@ -19,7 +19,7 @@ The primary design goal of LLRT is ease of experimentation, with good performanc
 
 LLRT is not designed for conventional ML projects. It's not a substitute for tensorflow or torch. You may wish to first experiment with neuron learning rules in LLRT, taking advantage of the design separation between network architecture and neuron behavior, before re-implementing your neurons in another framework to take advantage of CUDA.
 
-If you're one of those people who'd rather jump right into some code examples, check out examples/ex1.cpp . You might also want to take a look at GLOSSARY.md. For more explanation of what's going on, you can read the next few sections.
+If you're one of those people who'd rather jump right into some code examples, check out [examples/ex1.cpp](examples/ex1.cpp) . You might also want to take a look at [GLOSSARY.md](GLOSSARY.md). For more explanation of what's going on, you can read the next few sections.
 
 
 ## Structure of an LLRT Network
@@ -73,7 +73,7 @@ As in biology, it's expected that a neuron will activate based on information fr
 
 
 ## Diving in
-examples/ex1.cpp is a commented implementation of a Galves–Löcherbach integrate and fire neuron. It can be built and run by:
+[examples/ex1.cpp](examples/ex1.cpp) is a commented implementation of a Galves–Löcherbach integrate and fire neuron. It can be built and run by:
 ```
 cd build
 cmake ..
@@ -104,7 +104,7 @@ python3 genProcessLink.py -o process_link.hpp mySourceFile1.cpp mySourceFile2.hp
 
 ## More about link operations
 
-This section assumes you've already read `examples/ex1.cpp`. So you've seen some examples of how to apply a kernel to links in the network.
+This section assumes you've already read [examples/ex1.cpp](examples/ex1.cpp). So you've seen some examples of how to apply a kernel to links in the network.
 
 As mentioned earlier, the core function of LLRT is to allow you to apply a "kernel" to a Link.  A kernel is a functor (an object that implements `operator()`) or a lambda, which takes as parameters values related to data stored on two neurons and the edge connecting them. The kernel will execute for every edge in the link.
 
@@ -186,7 +186,7 @@ The last option to these Process commands is the JobOptions. The set of JobOptio
 `Combiner(myCombiner)` specifies a function that combines the results of execution of the different worker threads, allowing you to collect summary statistics about the network in parallel. More on that later.
 
 ## Additional link types
-examples/ex2_linktypes.cpp demonstrates how to use a few more link types, other than DenseLink. It covers:
+[examples/ex2_linktypes.cpp](examples/ex2_linktypes.cpp) demonstrates how to use a few more link types, other than DenseLink. It covers:
  * SameLink, which links each node on one component with the node on another component that has the same index. The selfLink that links each node on a component back to itself, allowing you to iterate over the nodes on the component, is a SameLink.
  * AdjListLink, which links each node with other nodes according to an adjacency list that you configure
  * Local2DLink, which links each node with other nodes in the connectivity pattern of a 2D convolution
@@ -263,11 +263,11 @@ In order to improve performance this way, you can use the `ParallelNonBlocking` 
         N.v[_1] += E.w * n.x[_0];
     }, Dendrites | ParallelNonBlocking | KernelName("EdgeSum"));
 ```
-This example is taken from `examples/ex3_nonblocking.cpp` which you may want to look at. The operation does not block and will run in the background. Consecutive `ParallelNonBlocking` batches will be queued up and done one after the other, in sequence, while each batch individually runs in parallel.
+This example is taken from [examples/ex3_nonblocking.cpp](examples/ex3_nonblocking.cpp) which you may want to look at. The operation does not block and will run in the background. Consecutive `ParallelNonBlocking` batches will be queued up and done one after the other, in sequence, while each batch individually runs in parallel.
 
 Sometimes you will need to wait for the queued up batches to finish. One easy way to do that is to call `net.finishBatches()` where `net` is your `Network<TL>` object. This will block until all pending batches are finished.
 
-It is also possible to wait for one specific batch to finish. This is demonstrated in `examples/ex3_nonblocking.cpp`. The Process family of functions have a return value, which is the batch number, a `size_t`. If you save that batch number, you can wait for the batch to finish with `net.finishBatch(batchNum)`. The example has a batch that applies inputs, from an `std::vector`, to a component in the network. This batch needs to be finished before we can fill the input vector with new values, otherwise there would be a race condition. So, we call `net.finishBatch(inputBatch)` before filling the input vector with new values. Other non-input batches can still run in the background while we do this, so the worker threads are not interrupted.
+It is also possible to wait for one specific batch to finish. This is demonstrated in [examples/ex3_nonblocking.cpp](examples/ex3_nonblocking.cpp). The Process family of functions have a return value, which is the batch number, a `size_t`. If you save that batch number, you can wait for the batch to finish with `net.finishBatch(batchNum)`. The example has a batch that applies inputs, from an `std::vector`, to a component in the network. This batch needs to be finished before we can fill the input vector with new values, otherwise there would be a race condition. So, we call `net.finishBatch(inputBatch)` before filling the input vector with new values. Other non-input batches can still run in the background while we do this, so the worker threads are not interrupted.
 
 ### ParallelPart
 It is best to have one large batch rather than several small ones. Even when pipelining multiple batches with `ParallelNonBlocking`, there is some delay involved when workers wake up to start on each batch, and then notify each other when the batch is done so they can move on to the next. So, if you have several operations that are capable of running at once, it is recommended you put them all in the same batch. This is done with the `ParallelPart` JobOption. Several operations with the `ParallelPart` option should be followed by an operation with the `Parallel` or `ParallelNonBlocking` option. This last operation will submit all the parts to the Scheduler in a single batch so work can begin.
@@ -275,7 +275,7 @@ It is best to have one large batch rather than several small ones. Even when pip
 You might do this, for example, if your network has several types of neurons and all the different types can calculate their activation values at the same time. All but one of the types of neurons would be represented by an operation using the `ParallelPart` option, and the last type of neuron would have an operation using the `Parallel` or `ParallelNonBlocking` option.
 
 ### Collecting summary data from the network
-The techniques of this section are demonstrated in examples/ex4_combiners.cpp .
+The techniques of this section are demonstrated in [examples/ex4_combiners.cpp](examples/ex4_combiners.cpp) .
 
 An easy way to collect summary data is to use a kernel that adds up values into a variable to which it holds a reference. For example:
 ```C++
@@ -313,7 +313,7 @@ auto PSK_Combiner = [](PotentialSumKernel_N &psk_original, PotentialSumKernel_N 
 ProcessNetCmps_N(net, PSK_N, Parallel | Combiner(PSK_Combiner) | KernelName("Combiner"));
 std::cout << "Total potential: " << PSK_N.totalPotential << std::endl;
 ```
-This code example can be found in examples/ex4_combiners.cpp
+This code example can be found in [examples/ex4_combiners.cpp](examples/ex4_combiners.cpp)
 
 If you're doing this, make sure that your original kernel is still in scope when it's time to combine the copies back into it. Otherwise you'll get a segfault! So, be careful with ParallelNonBlocking operations when you are using Combiners.
 
@@ -322,7 +322,7 @@ If you're doing this, make sure that your original kernel is still in scope when
 
 On the subject of kernel copies, note that a random number generator is an external variable that is written to with every random number it generates.  That's why you should use the "`g`" parameter to get a `ThreadsafeRNG`, instead of using your own, if you want to run your operations in parallel.  The `ThreadsafeRNG` makes a new copy of itself with a different seed in each worker thread so there is no conflict.
 
-Internally, the `ThreadsafeRNG` wraps a `std::mt19937_64`. It is possible to write your own threadsafe RNG, as a member variable of your kernel struct. It will get copied when your kernel does, and will need to give each copy a new seed. If you want to do this, look at network.hpp where the ThreadsafeRNG is defined.
+Internally, the `ThreadsafeRNG` wraps a `std::mt19937_64`. It is possible to write your own threadsafe RNG, as a member variable of your kernel struct. It will get copied when your kernel does, and will need to give each copy a new seed. If you want to do this, look at [include/network.hpp](include/network.hpp) where the ThreadsafeRNG is defined.
 
 ### Determinism
 A word on determinism.  It's a desirable property that when you give the network a particular initial random seed, the resulting behavior is absolutely determined by that seed.  This form of determinism makes experiments completely repeatable.
@@ -353,7 +353,7 @@ After you've enabled multithreading, you should test it to ensure it's actually 
 
 ## Profiling
 
-LLRT comes with a profiler that records when worker threads started and finished each job chunk, and some of what the main thread and scheduler thread are doing too. It is disabled by default because it impacts performance somewhat, and more importantly it generates a lot of data very quickly. On my computer, the `ex3_nonblocking.cpp` example generates 30mb of performance data from half a second of operations. So it is recommended to use the profiler only on relatively short runs.
+LLRT comes with a profiler that records when worker threads started and finished each job chunk, and some of what the main thread and scheduler thread are doing too. It is disabled by default because it impacts performance somewhat, and more importantly it generates a lot of data very quickly. On my computer, the [ex3_nonblocking.cpp](ex3_nonblocking.cpp) example generates 30mb of performance data from half a second of operations. So it is recommended to use the profiler only on relatively short runs.
 
 To turn on the profiler, you need to compile LLRT with the PROFILER preprocessor macro. You can tell cmake to use this macro by saying:
 
@@ -367,7 +367,7 @@ make ex3_nonblocking
 
 Once compiling with the PROFILER flag, at the end of your program, you write `net.perfReport('perfReport.json')`. This will dump performance data to perfReport.json. To view this data, open Chrome and navigate to chrome://tracing, then click load to view the file. You can zoom in and out and click on things for more detail. Each thread has a track, and things done by that thread show up as horizontal bars on the track.
 
-Here's a perf report for `examples/ex3_nonblocking.cpp`.
+Here's a perf report for [ex3_nonblocking.cpp](ex3_nonblocking.cpp).
 
 ![](perfreport.png) 
 
