@@ -1,4 +1,4 @@
-#LLRT#
+# LLRT
 
 Local Learning Rule Tensors (LLRT) is a neural network library to help you implement new biologically plausible neuron learning rules. LLRT gives you the ability to write custom neuron behavior, then run experiments with different network architectures, without having to rewrite neuron behavior for the different architectures.
 
@@ -217,7 +217,7 @@ The Scheduler assigns the batch to the worker threads, attempting to divide the 
 A single Link operation can be spread across many workers, if necessary, providing data parallelism. And a batch may consist of many Link operations, providing task parallelism.
 
 
-###Thread safety with the Near-Node Guarantee
+### Thread safety with the Near-Node Guarantee
 Parallelism in LLRT is done with a minimum of locks, for efficiency.  Instead, you must ensure that you aren't accessing or changing values in a way that could cause a race condition. To assist with this, LLRT provides the near-node guarantee.
 
 The near-node guarantee says: **when a worker thread runs a kernel on an edge with a particular near node, no other worker thread will run a kernel with that same near node at the same time**.
