@@ -4,10 +4,10 @@ Some of the more frequent terms used in LLRT.
 
 * Component: a multidimensional array of nodes
 * Node: a part of a Component, containing an arbitrary C++ object
-* Link: a connection between the nodes of two Components, represented algorithmically as a pattern of iteration
+* Link: a connection between the nodes of two Components, involving a pattern of iteration (a LinkType) and two Link ends.
 * Edge: a connection between two nodes
 * Network: a set of Components and Links
-* Link end: the end of a Link closest to a particular component
+* Link end: the end of a Link closest to a particular component, holding edge data.
 * 0-end: the end of a Link with index 0
 * 1-end: the end of a Link with index 1
 * Edge end: the end of an edge closest to a particular node, containing an arbitrary C++ object.

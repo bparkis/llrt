@@ -9,21 +9,19 @@ The primary design goal of LLRT is ease of experimentation, with good performanc
 
  * Write the behavior of each neuron and synapse using arbitrary C++ code, with whatever C++ features you like
  * Connect layers of neurons together independently of neuron behavior, in connectivity patterns such as Dense or Local2D.
- * Template parameters give the compiler enough information to inline the inner loop over the synapses[^1]
+ * Pretty fast for something that runs on CPU[^1]
  * Flip a switch to turn on multithreading[^2]
 
-[^1]: This motivated the templated design of LLRT. It means there is no calculation of unused parameters, no dynamic dispatch, and no function call overhead in the inner loop (unless you add these things yourself explicitly, or the compiler chooses not to inline).
+[^1]: Templates give the compiler enough information to inline the inner loop that iterates over the synapses, if it chooses to. This motivated the templated design of LLRT. It means there is no calculation of unused parameters, no dynamic dispatch, and no function call overhead in the inner loop (unless you add these things yourself explicitly, or the compiler chooses not to inline).
 
-[^2]: ... if you first check your code to be sure it's safe to flip that switch. LLRT comes with automatic task and data parallelism system. In fact, LLRT could be used as a more general purpose multithreading system, as long as you can formulate your task as a large number of small units communicating with each other.
+[^2]: ... if you first check your code to be sure it's safe to flip that switch. LLRT comes with an automatic task and data parallelism system. In fact, LLRT could be used as a more general purpose multithreading system, as long as you can formulate your task as a large number of small units communicating with each other.
 
 
 LLRT is not designed for conventional ML projects. It's not a substitute for tensorflow or torch. You may wish to first experiment with neuron learning rules in LLRT, taking advantage of the design separation between network architecture and neuron behavior, before re-implementing your neurons in another framework to take advantage of CUDA.
 
-If you're one of those people who'd rather jump right into some code examples, check out [examples/ex1.cpp](examples/ex1.cpp) . You might also want to take a look at [GLOSSARY.md](GLOSSARY.md). For more explanation of what's going on, you can read the next few sections.
-
 
 ## Structure of an LLRT Network
-Let's take a look at some basic concepts.  These will make it much easier to understand what's going on in the examples.
+Let's take a look at some basic concepts.  These will make it easier to understand what's going on in the examples.
 
 An LLRT Network consists of Components connected by Links.
 
@@ -35,17 +33,17 @@ For efficiency, the connectivity pattern of a Link does not usually exist as exp
 
 You define a neuron's behavior in LLRT by defining kernels, which are functions that you apply in sequence to the edges incident to the node, and to the node itself.  The kernels do things like sum up incoming voltage or calculate the neuron's activation potential.
 
-The core functionality of LLRT is to allow you to apply a kernel to a Link. The process of doing that is called a "link operation." Many link operations grouped together can be called a "network operation" or a "batch."
+The core functionality of LLRT is to allow you to apply a kernel to a Link. The process of doing that is called a "link operation." Applying the kernel to many links can be called a "network operation." One or more network operations - applying one or more kernels to one or more links - may be scheduled for parallel execution as a "batch."
 
-You can also apply a kernel to the nodes in a Component. This is really still applying the kernel to a Link; every Component has a selfLink with an edge from each node back to itself.
+You can also apply a kernel to the nodes in a Component. This is really still applying the kernel to a Link; every Component has a self-link with an edge from each node back to itself. So, looping over the edges of the self-link is effectively looping over the nodes of the Component.
 
 
 ### 0 ends and 1 ends
-One end of each Link is the 0 end, and the other end is the 1 end.  This may make a difference for the connectivity pattern.  For example, in a strided local2d link, the 0 end is always the bigger end, and the 1 end is the smaller end.  For a local2d link, going from end 0 to end 1 has the connectivity pattern of a convolution, and going from end 1 to end 0 has the connectivity pattern of a transpose convolution.  The ends of a Link are called LinkEnds.
+One end of each Link is the 0 end, and the other end is the 1 end.  This may make a difference for the connectivity pattern.  For example, in a strided local2d link, the 0 end is the bigger end, and the 1 end is the smaller end.  For a local2d link, going from end 0 to end 1 has the connectivity pattern of a convolution, and going from end 1 to end 0 has the connectivity pattern of a transpose convolution.
+
+The ends of a Link are called LinkEnds.
 
 Components store the Links that are incident to them.  A Component's Links are divided into the Links where the Component is attached to end 0, and the Links where the Component is attached to end 1.
-
-Individual edges can be described in the same way; one end of an edge is 0 and the other end is 1.
 
 
 ### Near ends and far ends
@@ -62,14 +60,16 @@ N ─── E ─── e ─── n
 
 These letters NEen are a standard notation in LLRT.  N stands for Node, E stands for Edge-End, a capital letter means "near," and a lowercase letter means "far."  Different data can be stored and updated at each of these four places.  Which node is the "near node" and which is the "far node" depends on which Component we are processing at the moment.
 
-Typically, an operation may read and write to the near node and the near edge-end, but should only read from the far node and the far edge-end. This convention helps avoid race conditions when running operations in parallel. See also the "near-node guarantee" in the Parallelism section.
+Typically, an operation may read and write to the near node and the near edge-end, but should only read from the far node and the far edge-end. The near-node node can be thought of as responsible for updating its own state and the state of the near edge-ends.  This convention helps avoid race conditions when running operations in parallel. See also the "near-node guarantee" in the Parallelism section.
 
-If you want to send a "message" to the far node, good policy is to first post the message to the near edge-end.  Once all messages of that kind have been posted for all nodes, you can have the far nodes read the messages in a second ProcessLink operation.
+If you want to send a "message" from the near node to the far node, good policy is to first post the message to the near edge-end.  Once all messages of that kind have been posted for all nodes, you can have the far nodes read the messages in a second network operation.
 
 ### Axons and dendrites
 Besides 0/1, or near/far, there is a third way to distinguish edge or Link ends.  One end of every Link is an "axon," and the other end is a "dendrite."  These labels are independent of which end is 0 or 1.  By default end 0 is the axon, and end 1 is the dendrite, but it can be configured so that end 0 is the dendrite and end 1 is the axon.
 
 As in biology, it's expected that a neuron will activate based on information from its dendrite edges, and will send out this activation along its axon edges.  Learning signals are expected to propagate in the opposite direction.  However, this is only a convention, and you may define any neuron behavior you like.  You may completely ignore the axon/dendrite designation if you wish.
+
+You might want to take a look at [GLOSSARY.md](GLOSSARY.md), for later reference.
 
 
 ## Diving in
@@ -145,21 +145,21 @@ ni = index at far component
 e = far edge-end
 ei = index at far link end
 f = edgeInfo
-g = ThreadsafeRNG
+r = ThreadsafeRNG
 ```
 The "index at" specifiers give you the index into the data array. The index is a `size_t`. For example, if `data` is the vector of data on the component, then `data[Ni] = N`. `Ni` is useful if you want to copy inputs from outside the network to the input component, or read off outputs from the output component.
 
 `f` gives you `edgeInfo`, which is a `size_t` that tells you, among the edges of the near node within a particular link, which edge it is.  For example, in a `Local2DLink` with depth 1 and radius 1, this would tell you whether the edge is northwest, north, northeast, west, center, east, southwest, south, or southeast. It's primarily useful if you have a locally connected link and want to apply a convolution to it; you need to know the direction of each edge in order to know which element of the convolution should be used.
 
-`g` gives you a `ThreadsafeRNG`. You can use it as a generator to pass to a distribution. For example:
+`r` gives you a `ThreadsafeRNG`. You can use it as a generator to pass to a distribution. For example:
 
 ```C++
-    ProcessNetLinks_Eg(net, [](IFDendrite &E, ThreadsafeRNG &g){
-        E.w = std::normal_distribution<float>(0,1.0)(g);
+    ProcessNetLinks_Er(net, [](IFDendrite &E, ThreadsafeRNG &r){
+        E.w = std::normal_distribution<float>(0,1.0)(r);
     }, Dendrites | Parallel)
 ```
 
-What makes `g` "threadsafe" is that it can copy itself for each worker thread, in such a way that the copies generate different pseudo-random sequences.
+What makes `r` "threadsafe" is that it can copy itself for each worker thread, in such a way that the copies generate different pseudo-random sequences.
 
 The last option to these Process commands is the JobOptions. The set of JobOptions is as follows. Multiple options may be joined together with `|`.
 
@@ -169,7 +169,7 @@ The last option to these Process commands is the JobOptions. The set of JobOptio
 
 `KernelName("My Kernel Name")` allows you to give a human-friendly name to the kernel, which will show up on the performance report.
 
-`NearCmpFilter(filter)` takes a function argument, `filter`, to only iterate over links where the near cmp matches the filter. `filter` takes a `Component<TL>` and returns true if the kernel should execute on that near component, and false otherwise. Only applicable for `ProcessNetCmps` or `ProcessNetLinks` operations.
+`NearCmpFilter(filter)` takes a function argument, `filter`, to only iterate over links where the near cmp matches the filter. `filter` takes a `Component<TL> &` and returns true if the kernel should execute on that near component, and false otherwise. Only applicable for `ProcessNetCmps` or `ProcessNetLinks` operations.
 
 `FarCmpFilter(filter)` is similar to `NearCmpFilter`, but for the far component.
 
@@ -187,8 +187,8 @@ The last option to these Process commands is the JobOptions. The set of JobOptio
 
 ## Additional link types
 [examples/ex2_linktypes.cpp](examples/ex2_linktypes.cpp) demonstrates how to use a few more link types, other than DenseLink. It covers:
- * SameLink, which links each node on one component with the node on another component that has the same index. The selfLink that links each node on a component back to itself, allowing you to iterate over the nodes on the component, is a SameLink.
- * AdjListLink, which links each node with other nodes according to an adjacency list that you configure
+ * SameLink, which links each node on one component with the node on another component that has the same index. The self-link that links each node on a component back to itself, allowing you to iterate over the nodes on the component, is a SameLink.
+ * AdjListLink, which links each node with other nodes according to an adjacency list that you configure.
  * Local2DLink, which links each node with other nodes in the connectivity pattern of a 2D convolution
 
 ## Parallelism

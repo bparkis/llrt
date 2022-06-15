@@ -60,8 +60,8 @@ def pkParam(n, specifier):
     if specifier == "Ni" or specifier == "Ei" or specifier == "f" or specifier == "ni" or specifier == "ei":
         return None
     if specifier == "r":
-        return "            link.ends[0].c.net.rng," 
-    s = "            link.template "
+        return "link.ends[0].c.net.rng" 
+    s = "link.template "
     if specifier[0] == "N" or specifier[0] == "n":
         s += "comp"
     else:
@@ -69,18 +69,36 @@ def pkParam(n, specifier):
     s += "Data"
     s += "<arg{0}>(".format(str(n))
     if specifier == "n" or specifier == "e":
-        s += "1-whichEnd),"
+        s += "1-whichEnd)"
     else:
-        s += "whichEnd),"
+        s += "whichEnd)"
     return s
 
-	# link.template compData<arg0>(whichEnd),
-	# link.template compDataNext<arg1>(whichEnd),
-	# link.template linkData<arg2>(whichEnd),
-	# link.template linkDataNext<arg3>(whichEnd),
+	# link.template compData<arg0>(whichEnd)
+	# link.template compDataNext<arg1>(whichEnd)
+	# link.template linkData<arg2>(whichEnd)
+	# link.template linkDataNext<arg3>(whichEnd)
+
+def filterVariant(specifier):
+    if specifier == "N":
+        return "link.ends[whichEnd].c.data.values"
+    if specifier == "n":
+        return "link.ends[1-whichEnd].c.data.values"
+    if specifier == "E":
+        return "link.ends[whichEnd].data.values"
+    if specifier == "e":
+        return "link.ends[1-whichEnd].data.values"
+    return None
+
+def filterParam(n, specifier):
+    if specifier == "N" or specifier == "n" or specifier == "E" or specifier == "e":
+        return """        if (!std::holds_alternative<std::vector<arg{0}> >({1}))
+            return 0;""".format(str(n), filterVariant(specifier))
+    return None
 
 def processLink(specifiers):
     argtypes = '\n'.join([argtype(n,specifiers[n]) for n in range(len(specifiers)) if argtype(n,specifiers[n])])
+    filtertypes = '\n'.join([filterParam(n, specifiers[n]) for n in range(len(specifiers)) if filterParam(n, specifiers[n])])
     # ensure that r is the last PureKernel member, so it doesn't take an initialization spot
     # that should go to a vector member variable or k
     vecspec = [s for s in specifiers if s != 'r']
@@ -89,7 +107,7 @@ def processLink(specifiers):
         vecs += "\n            ThreadsafeRNG r;"
     vecs += "\n            _" + "".join(specifiers) + "Kernel k;"
 
-    pkParams = '\n'.join([pkParam(n,specifiers[n]) for n in range(len(specifiers)) if pkParam(n,specifiers[n])])
+    pkParams = '\n'.join(["            " + pkParam(n,specifiers[n]) + "," for n in range(len(specifiers)) if pkParam(n,specifiers[n])])
     vecs_ref = vecs.replace("Kernel k", "Kernel &k")
     s="""
 
@@ -128,7 +146,7 @@ def processLink(specifiers):
         return QueueProcessLink(link, whichEnd, k, pk, pk_ref, li, opts);
     }}
 
-""".format("".join(specifiers), argtypes, vecs, call(specifiers), pkParams, vecs_ref)
+""".format("".join(specifiers), argtypes + '\n' + filtertypes, vecs, call(specifiers), pkParams, vecs_ref)
     return s
 
 def processCmp(specifiers):
@@ -155,7 +173,9 @@ def processLinks(specifiers):
                 opts.endOfBatch = endOfBatch;
                 opts.blocking = blocking;
             }}
-            clientBatchNum = ProcessLink_{0}(end->l, end->whichEnd, k, opts);
+            size_t result = ProcessLink_{0}(end->l, end->whichEnd, k, opts);
+            if (result > clientBatchNum)
+                clientBatchNum = result;
         }}
         return clientBatchNum;
     }}

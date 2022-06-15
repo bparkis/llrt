@@ -1,6 +1,4 @@
 // "process_link.hpp" is a generated file that contains the LLRT operations used in this program
-// created by a command like:
-//  python3 genProcessLink.py -o process_link.hpp examples/integrate_and_fire.cpp
 #include "process_link.hpp"
 #include <cmath>
 #include <algorithm>
@@ -80,7 +78,7 @@ void advanceNetwork(Network<TL> &net, size_t timestep, Component<TL> &inputCmp, 
 // Vᵢ[t+1] = 0  if Xᵢ[t] = 1, μᵢ Vᵢ[t] otherwise, + ...
 // every node calculates its potential based on its prior activation
 // value.
-    ProcessNetCmps_N(net, // "_Na" denotes the near node
+    ProcessNetCmps_N(net, // "_N" denotes the near node
         [=](IFNeuron &N){
             if (N.x[_0] == 0)
                 N.v[_1] = mu * N.v[_0];
