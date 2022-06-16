@@ -102,7 +102,7 @@
            Tensor
             │
             ├── std::variant<std::vector<TensorTypes>...> values
-            ╰── std::vector<int64_t> dimensions
+            ╰── std::vector<size_t> dimensions
           
         
    
