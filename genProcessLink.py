@@ -162,6 +162,7 @@ def processLinks(specifiers):
     s = """
     template<typename TL, typename {0}Kernel, typename C=NOpT3>
     size_t ProcessLinks_{0}(std::vector<LinkEnd<TL> *> &links, {0}Kernel &&k, JobOptions<C> opts=NullJobOptions){{
+        assert(links.size() > 0);
         bool endOfBatch = opts.endOfBatch;
         opts.endOfBatch = false;
         bool blocking = opts.blocking;
@@ -169,13 +170,16 @@ def processLinks(specifiers):
         size_t clientBatchNum=0;
         for(size_t i=0; i < links.size(); i++){{
             LinkEnd<TL> *end = links[i];
-            if(i == links.size()-1){{
-                opts.endOfBatch = endOfBatch;
-                opts.blocking = blocking;
-            }}
             size_t result = ProcessLink_{0}(end->l, end->whichEnd, k, opts);
             if (result > clientBatchNum)
                 clientBatchNum = result;
+        }}
+        std::optional<Scheduler> &sched = links[0]->c.net.sched;
+        if (sched.has_value()){{
+            if (endOfBatch)
+                sched->endOfBatch();
+            if (blocking)
+                sched->finishBatches();
         }}
         return clientBatchNum;
     }}

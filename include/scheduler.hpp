@@ -390,7 +390,6 @@ namespace llrt{
             assert(timeByKernel.contains(opTypeIndex));
             double estimate = timeByKernel[opTypeIndex].T_op * ops;
             return std::chrono::microseconds(static_cast<int64_t>(estimate));
-
         }
 
         /**
@@ -567,6 +566,17 @@ namespace llrt{
            given number to finish.
          */
         void finishBatch(size_t batchNumber);
+
+        /**
+           The client may call this after submitting several jobs, to
+           indicate the batch is ready to be scheduled. (As an
+           alternative to this function, the client may use the
+           endOfBatch option on the last job in the batch)
+
+           @return true if we successfully ended a batch, false if
+           there was sno batch to end.
+         */
+        bool endOfBatch();
 
         /**
            The client may call this to copy the scheduler's performance

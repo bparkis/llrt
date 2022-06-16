@@ -136,4 +136,5 @@ MakeLLRTProgram(ex1 "${CMAKE_CURRENT_SOURCE_DIR}/examples/ex1.cpp")
 MakeLLRTProgram(ex2_linktypes "${CMAKE_CURRENT_SOURCE_DIR}/examples/ex2_linktypes.cpp")
 MakeLLRTProgram(ex3_nonblocking "${CMAKE_CURRENT_SOURCE_DIR}/examples/ex3_nonblocking.cpp")
 MakeLLRTProgram(ex4_combiners "${CMAKE_CURRENT_SOURCE_DIR}/examples/ex4_combiners.cpp")
+MakeLLRTProgram(ex5_multineurontypes "${CMAKE_CURRENT_SOURCE_DIR}/examples/ex5_multineurontypes.cpp")
 

@@ -17,7 +17,7 @@ The primary design goal of LLRT is ease of experimentation, with good performanc
 [^2]: ... if you first check your code to be sure it's safe to flip that switch. LLRT comes with an automatic task and data parallelism system. In fact, LLRT could be used as a more general purpose multithreading system, as long as you can formulate your task as a large number of small units communicating with each other.
 
 
-LLRT is not designed for conventional ML projects. It's not a substitute for tensorflow or torch. You may wish to first experiment with neuron learning rules in LLRT, taking advantage of the design separation between network architecture and neuron behavior, before re-implementing your neurons in another framework to take advantage of CUDA.
+You may wish to first experiment with neuron learning rules in LLRT, taking advantage of the design separation between network architecture and neuron behavior, before re-implementing your neurons in another framework to take advantage of CUDA.
 
 
 ## Structure of an LLRT Network
@@ -317,12 +317,19 @@ This code example can be found in [examples/ex4_combiners.cpp](examples/ex4_comb
 
 If you're doing this, make sure that your original kernel is still in scope when it's time to combine the copies back into it. Otherwise you'll get a segfault! So, be careful with ParallelNonBlocking operations when you are using Combiners.
 
-
 ### Random number generation
 
-On the subject of kernel copies, note that a random number generator is an external variable that is written to with every random number it generates.  That's why you should use the "`g`" parameter to get a `ThreadsafeRNG`, instead of using your own, if you want to run your operations in parallel.  The `ThreadsafeRNG` makes a new copy of itself with a different seed in each worker thread so there is no conflict.
+On the subject of kernel copies, note that a random number generator is an external variable that is written to with every random number it generates.  That's why you should use the "`r`" parameter to get a `ThreadsafeRNG`, instead of using your own, if you want to run your operations in parallel.  The `ThreadsafeRNG` makes a new copy of itself with a different seed in each worker thread so there is no conflict.
 
 Internally, the `ThreadsafeRNG` wraps a `std::mt19937_64`. It is possible to write your own threadsafe RNG, as a member variable of your kernel struct. It will get copied when your kernel does, and will need to give each copy a new seed. If you want to do this, look at [include/network.hpp](include/network.hpp) where the ThreadsafeRNG is defined.
+
+### Using multiple neuron types in the same network
+See [examples/ex5_multineurontypes.cpp](examples/ex5_multineurontypes.cpp).
+
+The comments in the example describe how to use multiple neuron types in the same network, plus a couple other things. Summarizing the key points:
+* A network operation will only run on links where N, E, e, and n from the kernel parameters all have types that match the data on the Components and Link ends. This allows you to write operations for the different neuron types without having them interfere with each other.
+* ParallelPart can be used to run two network operations at the same time when there is no dependence between them, which is faster.
+* The "connect" function to create a link has two extra parameters, swapEnds and swapAxon. If set to true, swapEnds will swap which end is 0 and which end is 1, and swapAxon will swap which end is the axon and which end is the dendrite.
 
 ### Determinism
 A word on determinism.  It's a desirable property that when you give the network a particular initial random seed, the resulting behavior is absolutely determined by that seed.  This form of determinism makes experiments completely repeatable.

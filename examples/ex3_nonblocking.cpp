@@ -20,11 +20,6 @@
   completed before the next is started. Within each batch, operations
   will be done in any order and simultaneously, subject only to the
   near-node guarantee.
-
-  The comments below highlight the changes necessary to use
-  ParallelNonBlocking instead of Parallel.  Recommended to read
-  ex1.cpp first, because that version of the example has comments of a
-  more general nature.
  */
 
 using namespace llrt;

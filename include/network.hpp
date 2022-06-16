@@ -168,7 +168,6 @@ namespace llrt{
         using varType = std::variant<SameLink, Ls...>;
     };
 
-    
 /**
    Variable-type tensor.
  */
@@ -393,6 +392,7 @@ namespace llrt{
      */
     struct ThreadsafeRNG{
         std::mt19937_64 *baseRNG;
+        using result_type = std::mt19937_64::result_type;
         ThreadsafeRNG(){
             baseRNG = new std::mt19937_64(std::chrono::system_clock::now().time_since_epoch().count());
         }

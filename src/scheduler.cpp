@@ -490,6 +490,20 @@ namespace llrt{
         finishBatch(num);
     }
 
+    bool Scheduler::endOfBatch(){
+        std::unique_lock<std::mutex> schedLck(schedChan.mtx);
+        if (schedChan.batches.size() == 0 || schedChan.batches.back().readyToSchedule == true)
+            return false;
+
+        ClientBatch &batch = schedChan.batches.back();
+        batch.readyToSchedule = true;
+        schedLck.unlock();
+
+        schedChan.cv.notify_all();
+        return true;
+    }
+
+
     void Scheduler::mergeLoggers(NetworkPerfLogger &npl_client){
         finishBatches();
         std::unique_lock<std::mutex> schedLck(schedChan.mtx);
