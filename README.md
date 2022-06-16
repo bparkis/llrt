@@ -12,7 +12,7 @@ The primary design goal of LLRT is ease of experimentation, with good performanc
  * Pretty fast [^1]
  * Flip a switch to turn on multithreading[^2]
 
-[^1]: Templates give the compiler enough information to inline the inner loop that iterates over the synapses, if it chooses to. This motivated the templated design of LLRT. It means there is no calculation of unused parameters, no dynamic dispatch, and no function call overhead in the inner loop (unless you add these things yourself explicitly, or the compiler chooses not to inline).
+[^1]: The intent is that an LLRT operation is as fast as if you wrote an inlined nested loop over the synapses by hand, but much more convenient. Templates give the compiler enough information to inline the inner loop that iterates over the synapses, if it chooses to. This motivated the templated design of LLRT. It means there is no calculation of unused parameters, no dynamic dispatch, and no function call overhead in the inner loop (unless you add these things yourself explicitly, or the compiler chooses not to inline).
 
 [^2]: ... if you first check your code to be sure it's safe to flip that switch. LLRT comes with an automatic task and data parallelism system. In fact, LLRT could be used as a more general purpose multithreading system, as long as you can formulate your task as a large number of small units communicating with each other.
 
