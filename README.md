@@ -9,7 +9,7 @@ The primary design goal of LLRT is ease of experimentation, with good performanc
 
  * Write the behavior of each neuron and synapse using arbitrary C++ code, with whatever C++ features you like
  * Connect layers of neurons together independently of neuron behavior, in connectivity patterns such as Dense or Local2D.
- * Pretty fast for something that runs on CPU[^1]
+ * Pretty fast [^1]
  * Flip a switch to turn on multithreading[^2]
 
 [^1]: Templates give the compiler enough information to inline the inner loop that iterates over the synapses, if it chooses to. This motivated the templated design of LLRT. It means there is no calculation of unused parameters, no dynamic dispatch, and no function call overhead in the inner loop (unless you add these things yourself explicitly, or the compiler chooses not to inline).
@@ -327,9 +327,9 @@ Internally, the `ThreadsafeRNG` wraps a `std::mt19937_64`. It is possible to wri
 See [examples/ex5_multineurontypes.cpp](examples/ex5_multineurontypes.cpp).
 
 The comments in the example describe how to use multiple neuron types in the same network, plus a couple other things. Summarizing the key points:
-* A network operation will only run on links where N, E, e, and n from the kernel parameters all have types that match the data on the Components and Link ends. This allows you to write operations for the different neuron types without having them interfere with each other.
-* ParallelPart can be used to run two network operations at the same time when there is no dependence between them, which is faster.
-* The "connect" function to create a link has two extra parameters, swapEnds and swapAxon. If set to true, swapEnds will swap which end is 0 and which end is 1, and swapAxon will swap which end is the axon and which end is the dendrite.
+* A network operation will only run on links where N, E, e, and n from your kernel parameters all have types that match the data on the Components and Link ends. This allows you to write operations for the different neuron types without having them interfere with each other.
+* ParallelPart can be used to run two network operations at the same time when there is no dependence between them, which can be faster.
+* The "connect" function to create a link has two extra parameters, swapEnds and swapAxon, by default false. If set to true, swapEnds will swap which end is 0 and which end is 1, and swapAxon will swap which end is the axon and which end is the dendrite.
 
 ### Determinism
 A word on determinism.  It's a desirable property that when you give the network a particular initial random seed, the resulting behavior is absolutely determined by that seed.  This form of determinism makes experiments completely repeatable.
