@@ -60,7 +60,7 @@ N ─── E ─── e ─── n
 
 These letters NEen are a standard notation in LLRT.  N stands for Node, E stands for Edge-End, a capital letter means "near," and a lowercase letter means "far."  Different data can be stored and updated at each of these four places.  Which node is the "near node" and which is the "far node" depends on which Component we are processing at the moment.
 
-Typically, an operation may read and write to the near node and the near edge-end, but should only read from the far node and the far edge-end. The near-node node can be thought of as responsible for updating its own state and the state of the near edge-ends.  This convention helps avoid race conditions when running operations in parallel. See also the "near-node guarantee" in the Parallelism section.
+Typically, an operation may read and write to the near node and the near edge-end, but should only read from the far node and the far edge-end. The near-node can be thought of as responsible for updating its own state and the state of the near edge-ends.  This convention helps avoid race conditions when running operations in parallel. See also the "near-node guarantee" in the Parallelism section.
 
 If you want to send a "message" from the near node to the far node, good policy is to first post the message to the near edge-end.  Once all messages of that kind have been posted for all nodes, you can have the far nodes read the messages in a second network operation.
 
