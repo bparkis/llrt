@@ -149,7 +149,7 @@ r = ThreadsafeRNG
 ```
 The "index at" specifiers give you the index into the data array. The index is a `size_t`. For example, if `data` is the vector of data on the component, then `data[Ni] = N`. `Ni` is useful if you want to copy inputs from outside the network to the input component, or read off outputs from the output component.
 
-`f` gives you `edgeInfo`, which is a `size_t` that tells you, among the edges of the near node within a particular link, which edge it is.  For example, in a `Local2DLink` with depth 1 and radius 1, this would tell you whether the edge is northwest, north, northeast, west, center, east, southwest, south, or southeast. It's primarily useful if you have a locally connected link and want to apply a convolution to it; you need to know the direction of each edge in order to know which element of the convolution should be used.
+`f` gives you `edgeInfo`, which is a `size_t` that tells you, among the edges of the near node within a particular link, which kind of edge it is.  For example, in a `Local2DLink` with a 3x3 filter, this would tell you whether the edge is northwest, north, northeast, west, center, east, southwest, south, or southeast. It's primarily useful if you have a locally connected link and want to apply a convolution to it; you need to know the direction of each edge in order to know which element of the convolution should be used.
 
 `r` gives you a `ThreadsafeRNG`. You can use it as a generator to pass to a distribution. For example:
 
@@ -250,7 +250,7 @@ We also have to avoid reading values on the far-node at a time when they might b
         N.v[_1] += E.w * n.v[_1]; // unsafe; reading n.v[_1] when it may be changing
   }, Dendrites | Parallel);
 ```
-It is possible that n.value could be updating at the same time we are trying to read from it. That's because `n.value` from the perspective of the current edge-end, is also "`N.value`" from the perspective of the other end of the edge.
+It is possible that `n.v` could be updating at the same time we are trying to read from it. That's because `n.v` from the perspective of the current edge-end, is also "`N.v`" from the perspective of the other end of the edge.
 
 
 ### Pipelining batches with ParallelNonBlocking
@@ -272,7 +272,7 @@ It is also possible to wait for one specific batch to finish. This is demonstrat
 ### ParallelPart
 It is best to have one large batch rather than several small ones. Even when pipelining multiple batches with `ParallelNonBlocking`, there is some delay involved when workers wake up to start on each batch, and then notify each other when the batch is done so they can move on to the next. So, if you have several operations that are capable of running at once, it is recommended you put them all in the same batch. This is done with the `ParallelPart` JobOption. Several operations with the `ParallelPart` option should be followed by an operation with the `Parallel` or `ParallelNonBlocking` option. This last operation will submit all the parts to the Scheduler in a single batch so work can begin.
 
-You might do this, for example, if your network has several types of neurons and all the different types can calculate their activation values at the same time. All but one of the types of neurons would be represented by an operation using the `ParallelPart` option, and the last type of neuron would have an operation using the `Parallel` or `ParallelNonBlocking` option.
+You might do this, for example, if your network has several types of neurons and all the different types can calculate their activation values at the same time. All but one of the types of neurons would be represented by an operation using the `ParallelPart` option, and the last type of neuron would have an operation using the `Parallel` or `ParallelNonBlocking` option. See [examples/ex5_multineurontypes.cpp](examples/ex5_multineurontypes.cpp).
 
 ### Collecting summary data from the network
 The techniques of this section are demonstrated in [examples/ex4_combiners.cpp](examples/ex4_combiners.cpp) .
